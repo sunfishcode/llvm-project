@@ -156,6 +156,14 @@ createTargetCodeGenInfo(CodeGenModule &CGM) {
     WebAssemblyABIKind Kind = WebAssemblyABIKind::MVP;
     if (Target.getABI() == "experimental-mv")
       Kind = WebAssemblyABIKind::ExperimentalMV;
+    else if (Target.getABI() == "experimental-a")
+      Kind = WebAssemblyABIKind::ExperimentalA;
+    else if (Target.getABI() == "experimental-b")
+      Kind = WebAssemblyABIKind::ExperimentalB;
+    else if (Target.getABI() == "experimental-c")
+      Kind = WebAssemblyABIKind::ExperimentalC;
+    else if (Target.getABI() == "experimental-d")
+      Kind = WebAssemblyABIKind::ExperimentalD;
     return createWebAssemblyTargetCodeGenInfo(CGM, Kind);
   }
 

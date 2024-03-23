@@ -12,6 +12,9 @@
 using namespace clang;
 using namespace clang::CodeGen;
 
+static bool passTypeAsValues(QualType T, ASTContext &Context, size_t &Num);
+static bool passRecordTypeAsValues(QualType T, ASTContext &Context, size_t &Num);
+
 //===----------------------------------------------------------------------===//
 // WebAssembly ABI Implementation
 //
@@ -125,6 +128,26 @@ ABIArgInfo WebAssemblyABIInfo::classifyArgumentType(QualType Ty) const {
       }
       if (!HasBitField)
         return ABIArgInfo::getExpand();
+    } else if (Kind == WebAssemblyABIKind::ExperimentalA) {
+      size_t Num = 16;
+      if (passRecordTypeAsValues(Ty, getContext(), Num)) {
+        return ABIArgInfo::getExpand();
+      }
+    } else if (Kind == WebAssemblyABIKind::ExperimentalB) {
+      size_t Num = 16;
+      if (passRecordTypeAsValues(Ty, getContext(), Num)) {
+        return ABIArgInfo::getExpand();
+      }
+    } else if (Kind == WebAssemblyABIKind::ExperimentalC) {
+      size_t Num = 64;
+      if (passRecordTypeAsValues(Ty, getContext(), Num)) {
+        return ABIArgInfo::getExpand();
+      }
+    } else if (Kind == WebAssemblyABIKind::ExperimentalD) {
+      size_t Num = 4;
+      if (passRecordTypeAsValues(Ty, getContext(), Num)) {
+        return ABIArgInfo::getExpand();
+      }
     }
   }
 
@@ -148,11 +171,128 @@ ABIArgInfo WebAssemblyABIInfo::classifyReturnType(QualType RetTy) const {
       // For the experimental multivalue ABI, return all other aggregates
       if (Kind == WebAssemblyABIKind::ExperimentalMV)
         return ABIArgInfo::getDirect();
+      if (Kind == WebAssemblyABIKind::ExperimentalA) {
+        size_t Num = 4;
+        if (passRecordTypeAsValues(RetTy, getContext(), Num)) {
+          return ABIArgInfo::getDirect();
+        }
+      } else if (Kind == WebAssemblyABIKind::ExperimentalB) {
+        size_t Num = 16;
+        if (passRecordTypeAsValues(RetTy, getContext(), Num)) {
+          return ABIArgInfo::getDirect();
+        }
+      } else if (Kind == WebAssemblyABIKind::ExperimentalC) {
+        size_t Num = 4;
+        if (passRecordTypeAsValues(RetTy, getContext(), Num)) {
+          return ABIArgInfo::getDirect();
+        }
+      } else if (Kind == WebAssemblyABIKind::ExperimentalD) {
+        size_t Num = 4;
+        if (passRecordTypeAsValues(RetTy, getContext(), Num)) {
+          return ABIArgInfo::getDirect();
+        }
+      }
     }
   }
 
   // Otherwise just do the default thing.
   return defaultInfo.classifyReturnType(RetTy);
+}
+
+// Test if `T` can be passed by value, with `Num` flat argument values left.
+// Decrement `Num` by the number of flat values used.
+static bool passTypeAsValues(QualType T, ASTContext &Context, size_t &Num) {
+  if (isAggregateTypeForABI(T)) {
+    return passRecordTypeAsValues(T, Context, Num);
+  }
+
+  // If we don't have any flat values left, we can't pass values by value.
+  if (Num == 0) {
+    return false;
+  }
+
+  // Use one flat value.
+  --Num;
+  return true;
+}
+
+// Test if `T`, which is an aggregate type, can be passed by value, with `Num`
+// flat argument values left. Decrement `Num` by the number of flat values used.
+static bool passRecordTypeAsValues(QualType T, ASTContext &Context, size_t &Num) {
+  const RecordType *RT = T->getAs<RecordType>();
+  if (!RT)
+    return false;
+
+  const RecordDecl *RD = RT->getDecl();
+  if (RD->hasFlexibleArrayMember())
+    return false;
+
+  // If this is a C++ record, check the bases first.
+  if (const CXXRecordDecl *CXXRD = dyn_cast<CXXRecordDecl>(RD)) {
+    for (const auto &I : CXXRD->bases()) {
+      // Ignore empty records.
+      if (isEmptyRecord(Context, I.getType(), true))
+        continue;
+
+      // If this is non-empty and not a single element struct, the composite
+      // cannot be a single element struct.
+      bool Found = passRecordTypeAsValues(I.getType(), Context, Num);
+      if (!Found)
+        return false;
+    }
+  }
+
+  if (const RecordType *UT = RT->getAsUnionType()) {
+    // Determine the union arm that uses the most flat values.
+    size_t MinNum = Num;
+    for (const auto *FD : UT->getDecl()->fields()) {
+      size_t FieldNum = Num;
+      QualType FT = FD->getType();
+
+      // Ignore empty fields.
+      if (isEmptyField(Context, FD, true))
+        continue;
+
+      // Treat single element arrays as the element.
+      while (const ConstantArrayType *AT = Context.getAsConstantArrayType(FT)) {
+        if (AT->getSize().getZExtValue() != 1)
+          break;
+        FT = AT->getElementType();
+      }
+
+      bool Found = passTypeAsValues(FT, Context, FieldNum);
+      if (!Found)
+        return false;
+
+      if (FieldNum < MinNum)
+        MinNum = FieldNum;
+    }
+
+    Num = MinNum;
+    return true;
+  }
+
+  // Check for single element.
+  for (const auto *FD : RD->fields()) {
+    QualType FT = FD->getType();
+
+    // Ignore empty fields.
+    if (isEmptyField(Context, FD, true))
+      continue;
+
+    // Treat single element arrays as the element.
+    while (const ConstantArrayType *AT = Context.getAsConstantArrayType(FT)) {
+      if (AT->getSize().getZExtValue() != 1)
+        break;
+      FT = AT->getElementType();
+    }
+
+    bool Found = passTypeAsValues(FT, Context, Num);
+    if (!Found)
+      return false;
+  }
+
+  return true;
 }
 
 Address WebAssemblyABIInfo::EmitVAArg(CodeGenFunction &CGF, Address VAListAddr,

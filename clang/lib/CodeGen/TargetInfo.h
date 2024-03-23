@@ -530,6 +530,10 @@ createVETargetCodeGenInfo(CodeGenModule &CGM);
 enum class WebAssemblyABIKind {
   MVP = 0,
   ExperimentalMV = 1,
+  ExperimentalA = 2,
+  ExperimentalB = 3,
+  ExperimentalC = 4,
+  ExperimentalD = 5,
 };
 
 std::unique_ptr<TargetCodeGenInfo>

@@ -36,7 +36,9 @@ static constexpr llvm::StringLiteral ValidCPUNames[] = {
 StringRef WebAssemblyTargetInfo::getABI() const { return ABI; }
 
 bool WebAssemblyTargetInfo::setABI(const std::string &Name) {
-  if (Name != "mvp" && Name != "experimental-mv")
+  if (Name != "mvp" && Name != "experimental-mv" &&
+      Name != "experimental-a" && Name != "experimental-b" &&
+      Name != "experimental-c" && Name != "experimental-d")
     return false;
 
   ABI = Name;
