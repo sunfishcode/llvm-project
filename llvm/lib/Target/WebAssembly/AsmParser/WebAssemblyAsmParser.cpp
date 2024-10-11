@@ -292,7 +292,8 @@ public:
 
     DefaultFunctionTable = getOrCreateFunctionTableSymbol(
         getContext(), "__indirect_function_table", Is64);
-    if (!STI->checkFeatures("+call-indirect-overlong"))
+    if (!STI->checkFeatures("+call-indirect-overlong") &&
+        !STI->checkFeatures("+reference-types"))
       DefaultFunctionTable->setOmitFromLinkingSection();
   }
 
@@ -532,11 +533,13 @@ public:
   }
 
   bool parseFunctionTableOperand(std::unique_ptr<WebAssemblyOperand> *Op) {
-    if (STI->checkFeatures("+call-indirect-overlong")) {
-      // If the call-indirect-overlong feature is enabled, there is an explicit
-      // table operand.  To allow the same assembly to be compiled with or
-      // without call-indirect overlong, we allow the operand to be omitted, in
-      // which case we default to __indirect_function_table.
+    if (STI->checkFeatures("+call-indirect-overlong") ||
+        STI->checkFeatures("+reference-types")) {
+      // If the call-indirect-overlong feature is enabled, or implied by the
+      // reference-types feature, there is an explicit table operand.  To allow
+      // the same assembly to be compiled with or without
+      // call-indirect-overlong, we allow the operand to be omitted, in which
+      // case we default to __indirect_function_table.
       auto &Tok = Lexer.getTok();
       if (Tok.is(AsmToken::Identifier)) {
         auto *Sym =
