@@ -47,6 +47,7 @@ bool WebAssemblyTargetInfo::hasFeature(StringRef Feature) const {
   return llvm::StringSwitch<bool>(Feature)
       .Case("atomics", HasAtomics)
       .Case("bulk-memory", HasBulkMemory)
+      .Case("bulk-memory-opt", HasBulkMemoryOpt)
       .Case("exception-handling", HasExceptionHandling)
       .Case("extended-const", HasExtendedConst)
       .Case("fp16", HasFP16)
@@ -55,6 +56,7 @@ bool WebAssemblyTargetInfo::hasFeature(StringRef Feature) const {
       .Case("mutable-globals", HasMutableGlobals)
       .Case("nontrapping-fptoint", HasNontrappingFPToInt)
       .Case("reference-types", HasReferenceTypes)
+      .Case("call-indirect-overlong", HasCallIndirectOverlong)
       .Case("relaxed-simd", SIMDLevel >= RelaxedSIMD)
       .Case("sign-ext", HasSignExt)
       .Case("simd128", SIMDLevel >= SIMD128)
@@ -78,6 +80,8 @@ void WebAssemblyTargetInfo::getTargetDefines(const LangOptions &Opts,
     Builder.defineMacro("__wasm_atomics__");
   if (HasBulkMemory)
     Builder.defineMacro("__wasm_bulk_memory__");
+  if (HasBulkMemoryOpt)
+    Builder.defineMacro("__wasm_bulk_memory_opt__");
   if (HasExceptionHandling)
     Builder.defineMacro("__wasm_exception_handling__");
   if (HasExtendedConst)
@@ -154,12 +158,23 @@ bool WebAssemblyTargetInfo::initFeatureMap(
     Features["multivalue"] = true;
     Features["mutable-globals"] = true;
     Features["reference-types"] = true;
+    Features["call-indirect-overlong"] = true;
     Features["sign-ext"] = true;
+  };
+  auto addTrail1Features = [&]() {
+    Features["multivalue"] = true;
+    Features["mutable-globals"] = true;
+    Features["call-indirect-overlong"] = true;
+    Features["sign-ext"] = true;
+    Features["bulk-memory-opt"] = true;
+    Features["nontrapping-fptoint"] = true;
+    Features["extended-const"] = true;
   };
   auto addBleedingEdgeFeatures = [&]() {
     addGenericFeatures();
     Features["atomics"] = true;
     Features["bulk-memory"] = true;
+    Features["bulk-memory-opt"] = true;
     Features["exception-handling"] = true;
     Features["extended-const"] = true;
     Features["fp16"] = true;
@@ -170,6 +185,8 @@ bool WebAssemblyTargetInfo::initFeatureMap(
   };
   if (CPU == "generic") {
     addGenericFeatures();
+  } else if (CPU == "trail1") {
+    addTrail1Features();
   } else if (CPU == "bleeding-edge") {
     addBleedingEdgeFeatures();
   }
@@ -194,6 +211,14 @@ bool WebAssemblyTargetInfo::handleTargetFeatures(
     }
     if (Feature == "-bulk-memory") {
       HasBulkMemory = false;
+      continue;
+    }
+    if (Feature == "+bulk-memory-opt") {
+      HasBulkMemoryOpt = true;
+      continue;
+    }
+    if (Feature == "-bulk-memory-opt") {
+      HasBulkMemoryOpt = false;
       continue;
     }
     if (Feature == "+exception-handling") {
@@ -261,6 +286,14 @@ bool WebAssemblyTargetInfo::handleTargetFeatures(
       HasReferenceTypes = false;
       continue;
     }
+    if (Feature == "+call-indirect-overlong") {
+      HasCallIndirectOverlong = true;
+      continue;
+    }
+    if (Feature == "-call-indirect-overlong") {
+      HasCallIndirectOverlong = false;
+      continue;
+    }
     if (Feature == "+relaxed-simd") {
       SIMDLevel = std::max(SIMDLevel, RelaxedSIMD);
       continue;
@@ -298,6 +331,18 @@ bool WebAssemblyTargetInfo::handleTargetFeatures(
         << Feature << "-target-feature";
     return false;
   }
+
+  // The reference-types feature included the change to `call_indirect`
+  // encodings to support overlong immediates.
+  if (HasReferenceTypes) {
+    HasCallIndirectOverlong = true;
+  }
+
+  // bulk-memory-opt is a subset of bulk-memory.
+  if (HasBulkMemory) {
+    HasBulkMemoryOpt = true;
+  }
+
   return true;
 }
 
