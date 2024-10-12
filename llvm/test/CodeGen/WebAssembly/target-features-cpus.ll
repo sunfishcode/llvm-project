@@ -1,5 +1,6 @@
 ; RUN: llc < %s -mcpu=mvp | FileCheck %s --check-prefixes MVP
 ; RUN: llc < %s -mcpu=generic | FileCheck %s --check-prefixes GENERIC
+; RUN: llc < %s -mcpu=trail1 | FileCheck %s --check-prefixes TRAIL1
 ; RUN: llc < %s | FileCheck %s --check-prefixes GENERIC
 ; RUN: llc < %s -mcpu=bleeding-edge | FileCheck %s --check-prefixes BLEEDING-EDGE
 
@@ -26,6 +27,31 @@ target triple = "wasm32-unknown-unknown"
 ; GENERIC-NEXT: .int8  43
 ; GENERIC-NEXT: .int8  8
 ; GENERIC-NEXT: .ascii  "sign-ext"
+
+; trail1: +bulk-memory-opt, +call-indirect-overlong, +extended-const, +multivalue, +mutable-globals, +nontrapping-fptoint, +sign-ext
+; TRAIL1-LABEL: .custom_section.target_features,"",@
+; TRAIL1-NEXT: .int8  6
+; TRAIL1-NEXT: .int8  43
+; TRAIL1-NEXT: .int8  15
+; TRAIL1-NEXT: .int8  "bulk-memory-opt"
+; TRAIL1-NEXT: .int8  43
+; TRAIL1-NEXT: .int8  22
+; TRAIL1-NEXT: .int8  "call-indirect-overlong"
+; TRAIL1-NEXT: .int8  43
+; TRAIL1-NEXT: .int8  14
+; TRAIL1-NEXT: .ascii  "extended-const"
+; TRAIL1-NEXT: .int8  43
+; TRAIL1-NEXT: .int8  10
+; TRAIL1-NEXT: .ascii  "multivalue"
+; TRAIL1-NEXT: .int8  43
+; TRAIL1-NEXT: .int8  15
+; TRAIL1-NEXT: .ascii  "mutable-globals"
+; TRAIL1-NEXT: .int8  43
+; TRAIL1-NEXT: .int8  19
+; TRAIL1-NEXT: .ascii  "nontrapping-fptoint"
+; TRAIL1-NEXT: .int8  43
+; TRAIL1-NEXT: .int8  8
+; TRAIL1-NEXT: .ascii  "sign-ext"
 
 ; bleeding-edge: +atomics, +bulk-memory, +exception-handling, +extended-const,
 ;                +fp16, +multimemory, +multivalue, +mutable-globals,
