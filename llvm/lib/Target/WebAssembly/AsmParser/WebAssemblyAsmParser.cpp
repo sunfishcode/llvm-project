@@ -281,11 +281,11 @@ public:
 
     // bulk-memory implies bulk-memory-opt
     if (FBS.test(WebAssembly::FeatureBulkMemory)) {
-        FBS.set(WebAssembly::FeatureBulkMemoryOpt);
+      FBS.set(WebAssembly::FeatureBulkMemoryOpt);
     }
     // reference-types implies call-indirect-overlong
     if (FBS.test(WebAssembly::FeatureReferenceTypes)) {
-        FBS.set(WebAssembly::FeatureCallIndirectOverlong);
+      FBS.set(WebAssembly::FeatureCallIndirectOverlong);
     }
 
     setAvailableFeatures(FBS);
