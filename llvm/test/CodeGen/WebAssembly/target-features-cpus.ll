@@ -12,9 +12,12 @@ target triple = "wasm32-unknown-unknown"
 ; mvp: should not contain the target features section
 ; MVP-NOT: .custom_section.target_features,"",@
 
-; generic: +multivalue, +mutable-globals, +reference-types, +sign-ext
+; generic: +call-indirect-overlong, +multivalue, +mutable-globals, +reference-types, +sign-ext
 ; GENERIC-LABEL: .custom_section.target_features,"",@
 ; GENERIC-NEXT: .int8  4
+; GENERIC-NEXT: .int8  43
+; GENERIC-NEXT: .int8  22
+; GENERIC-NEXT: .ascii  "call-indirect-overlong"
 ; GENERIC-NEXT: .int8  43
 ; GENERIC-NEXT: .int8  10
 ; GENERIC-NEXT: .ascii  "multivalue"
@@ -53,10 +56,11 @@ target triple = "wasm32-unknown-unknown"
 ; TRAIL1-NEXT: .int8  8
 ; TRAIL1-NEXT: .ascii  "sign-ext"
 
-; bleeding-edge: +atomics, +bulk-memory, +exception-handling, +extended-const,
-;                +fp16, +multimemory, +multivalue, +mutable-globals,
-;                +nontrapping-fptoint, +relaxed-simd, +reference-types,
-;                +simd128, +sign-ext, +tail-call
+; bleeding-edge: +atomics, +bulk-memory, +bulk-memory-opt,
+;                +call-indirect-overlong, +exception-handling,
+;                +extended-const, +fp16, +multimemory, +multivalue,
+;                +mutable-globals, +nontrapping-fptoint, +relaxed-simd,
+;                +reference-types, +simd128, +sign-ext, +tail-call
 ; BLEEDING-EDGE-LABEL: .section  .custom_section.target_features,"",@
 ; BLEEDING-EDGE-NEXT: .int8  14
 ; BLEEDING-EDGE-NEXT: .int8  43
@@ -65,6 +69,12 @@ target triple = "wasm32-unknown-unknown"
 ; BLEEDING-EDGE-NEXT: .int8  43
 ; BLEEDING-EDGE-NEXT: .int8  11
 ; BLEEDING-EDGE-NEXT: .ascii  "bulk-memory"
+; BLEEDING-EDGE-NEXT: .int8  43
+; BLEEDING-EDGE-NEXT: .int8  15
+; BLEEDING-EDGE-NEXT: .ascii  "bulk-memory-opt"
+; BLEEDING-EDGE-NEXT: .int8  43
+; BLEEDING-EDGE-NEXT: .int8  22
+; BLEEDING-EDGE-NEXT: .ascii  "call-indirect-overlong"
 ; BLEEDING-EDGE-NEXT: .int8  43
 ; BLEEDING-EDGE-NEXT: .int8  18
 ; BLEEDING-EDGE-NEXT: .ascii  "exception-handling"

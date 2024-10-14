@@ -48,6 +48,7 @@ bool WebAssemblyTargetInfo::hasFeature(StringRef Feature) const {
       .Case("atomics", HasAtomics)
       .Case("bulk-memory", HasBulkMemory)
       .Case("bulk-memory-opt", HasBulkMemoryOpt)
+      .Case("call-indirect-overlong", HasCallIndirectOverlong)
       .Case("exception-handling", HasExceptionHandling)
       .Case("extended-const", HasExtendedConst)
       .Case("fp16", HasFP16)
@@ -56,7 +57,6 @@ bool WebAssemblyTargetInfo::hasFeature(StringRef Feature) const {
       .Case("mutable-globals", HasMutableGlobals)
       .Case("nontrapping-fptoint", HasNontrappingFPToInt)
       .Case("reference-types", HasReferenceTypes)
-      .Case("call-indirect-overlong", HasCallIndirectOverlong)
       .Case("relaxed-simd", SIMDLevel >= RelaxedSIMD)
       .Case("sign-ext", HasSignExt)
       .Case("simd128", SIMDLevel >= SIMD128)
@@ -175,6 +175,7 @@ bool WebAssemblyTargetInfo::initFeatureMap(
     Features["atomics"] = true;
     Features["bulk-memory"] = true;
     Features["bulk-memory-opt"] = true;
+    Features["call-indirect-overlong"] = true;
     Features["exception-handling"] = true;
     Features["extended-const"] = true;
     Features["fp16"] = true;
