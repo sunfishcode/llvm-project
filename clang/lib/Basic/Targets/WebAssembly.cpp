@@ -161,7 +161,7 @@ bool WebAssemblyTargetInfo::initFeatureMap(
     Features["call-indirect-overlong"] = true;
     Features["sign-ext"] = true;
   };
-  auto addTrail1Features = [&]() {
+  auto addLime1Features = [&]() {
     Features["multivalue"] = true;
     Features["mutable-globals"] = true;
     Features["call-indirect-overlong"] = true;
@@ -186,8 +186,8 @@ bool WebAssemblyTargetInfo::initFeatureMap(
   };
   if (CPU == "generic") {
     addGenericFeatures();
-  } else if (CPU == "trail1") {
-    addTrail1Features();
+  } else if (CPU == "lime1") {
+    addLime1Features();
   } else if (CPU == "bleeding-edge") {
     addBleedingEdgeFeatures();
   }
